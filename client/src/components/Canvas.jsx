@@ -3,9 +3,11 @@ import socket from "../utils/socket";
 import { initHandTracker, detectHands } from "../utils/handTracker";
 
 function Canvas() {
-
+  
   const canvasRef = useRef(null);
+  const cursorCanvasRef = useRef(null); // cursor overlay
   const videoRef = useRef(null);
+
   const drawing = useRef(false)
   const cursorX = useRef(0);
   const cursorY = useRef(0);
@@ -47,10 +49,19 @@ function Canvas() {
   };
 
   // draw finger cursor
+// draw finger cursor (on overlay canvas)
   const drawCursor = () => {
 
-    const ctx = canvasRef.current?.getContext("2d");
+    const ctx = cursorCanvasRef.current?.getContext("2d");
     if (!ctx) return;
+
+    // clear previous cursor
+    ctx.clearRect(
+      0,
+      0,
+      cursorCanvasRef.current.width,
+      cursorCanvasRef.current.height
+    );
 
     ctx.beginPath();
     ctx.arc(cursorX.current, cursorY.current, 6, 0, Math.PI * 2);
@@ -135,15 +146,29 @@ function Canvas() {
   return (
     <div style={{ display: "flex", gap: "20px" }}>
 
-      {/* drawing canvas */}
-      <canvas
-        ref={canvasRef}
-        width={800}
-        height={500}
-        style={{ border: "2px solid black" }}
-      />
+      <div style={{ position: "relative" }}>
 
-      {/* local webcam preview */}
+        <canvas
+          ref={canvasRef}
+          width={800}
+          height={500}
+          style={{ border: "2px solid black" }}
+        />
+
+        <canvas
+          ref={cursorCanvasRef}
+          width={800}
+          height={500}
+          style={{
+            position: "absolute",
+            left: 0,
+            top: 0,
+            pointerEvents: "none"
+          }}
+        />
+
+      </div>
+
       <video
         ref={videoRef}
         width={300}
@@ -151,7 +176,7 @@ function Canvas() {
         autoPlay
         style={{
           border: "2px solid black",
-          transform: "scaleX(-1)" // mirror webcam
+          transform: "scaleX(-1)"
         }}
       />
 
