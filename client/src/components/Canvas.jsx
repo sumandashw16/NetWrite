@@ -7,6 +7,8 @@ function Canvas() {
   const canvasRef = useRef(null);
   const videoRef = useRef(null);
   const drawing = useRef(false)
+  const cursorX = useRef(0);
+  const cursorY = useRef(0);
 
   // store last smoothed position
   const lastX = useRef(0);
@@ -42,6 +44,18 @@ function Canvas() {
       ctx.lineTo(x, y);
       ctx.stroke();
     }
+  };
+
+  // draw finger cursor
+  const drawCursor = () => {
+
+    const ctx = canvasRef.current?.getContext("2d");
+    if (!ctx) return;
+
+    ctx.beginPath();
+    ctx.arc(cursorX.current, cursorY.current, 6, 0, Math.PI * 2);
+    ctx.fillStyle = "red";
+    ctx.fill();
   };
 
   useEffect(() => {
@@ -80,7 +94,8 @@ function Canvas() {
           const y = finger.y * canvas.height;
 
           const p = smooth(x, y);
-
+          cursorX.current = p.x;
+          cursorY.current = p.y;
           if (finger.draw) {
 
             draw(p.x, p.y);
@@ -88,7 +103,8 @@ function Canvas() {
             socket.emit("draw_event", {
               roomId: "room1",
               x: p.x,
-              y: p.y
+              y: p.y,
+              drawing: finger.draw
             });
 
           } else {
@@ -97,7 +113,7 @@ function Canvas() {
           }
         }
       }
-
+      drawCursor();
       requestAnimationFrame(loop);
     };
 
@@ -105,6 +121,12 @@ function Canvas() {
 
     // receive drawings from other users
     socket.on("draw_event", (data) => {
+
+      if (!data.drawing) {
+        drawing.current = false;
+        return;
+      }
+
       draw(data.x, data.y);
     });
 
