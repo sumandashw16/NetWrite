@@ -3,158 +3,174 @@ import socket from "../utils/socket";
 import { initHandTracker, detectHands } from "../utils/handTracker";
 
 function Canvas() {
-  
   const canvasRef = useRef(null);
-  const cursorCanvasRef = useRef(null); // cursor overlay
+  const cursorCanvasRef = useRef(null);
   const videoRef = useRef(null);
 
-  const drawing = useRef(false)
-  const cursorX = useRef(0);
-  const cursorY = useRef(0);
+  // If these are 'null', the pen is hovering. 
+  // If they hold {x, y}, the pen is dragging on the canvas.
+  const localLastPos = useRef(null);
+  const remoteLastPos = useRef(null);
 
-  // store last smoothed position
-  const lastX = useRef(0);
-  const lastY = useRef(0);
+  // Track the floating cursors
+  const localCursor = useRef({ x: 0, y: 0 });
+  const remoteCursor = useRef({ x: 0, y: 0, active: false });
 
-  // smooth finger movement
-  const smooth = (x, y) => {
+  // Prevent network spam
+  const lastEmitted = useRef({ x: 0, y: 0, drawing: false });
 
-    const alpha = 0.7;
-
-    lastX.current = alpha * lastX.current + (1 - alpha) * x;
-    lastY.current = alpha * lastY.current + (1 - alpha) * y;
-
-    return { x: lastX.current, y: lastY.current };
-  };
-
-  // draw continuous line
-  const draw = (x, y) => {
-
-    const ctx = canvasRef.current?.getContext("2d");
-    if (!ctx) return;
-
-    ctx.lineWidth = 3;
-    ctx.lineCap = "round";
-
-    if (!drawing.current) {
-      // start new stroke
-      ctx.beginPath();
-      ctx.moveTo(x, y);
-      drawing.current = true;
-    } else {
-      // continue stroke
-      ctx.lineTo(x, y);
-      ctx.stroke();
-    }
-  };
-
-  // draw finger cursor
-// draw finger cursor (on overlay canvas)
-  const drawCursor = () => {
-
+  const drawCursors = () => {
     const ctx = cursorCanvasRef.current?.getContext("2d");
     if (!ctx) return;
 
-    // clear previous cursor
-    ctx.clearRect(
-      0,
-      0,
-      cursorCanvasRef.current.width,
-      cursorCanvasRef.current.height
-    );
+    ctx.clearRect(0, 0, cursorCanvasRef.current.width, cursorCanvasRef.current.height);
 
+    // Local Cursor (Red)
     ctx.beginPath();
-    ctx.arc(cursorX.current, cursorY.current, 6, 0, Math.PI * 2);
+    ctx.arc(localCursor.current.x, localCursor.current.y, 6, 0, Math.PI * 2);
     ctx.fillStyle = "red";
     ctx.fill();
+
+    // Remote Cursor (Blue)
+    if (remoteCursor.current.active) {
+      ctx.beginPath();
+      ctx.arc(remoteCursor.current.x, remoteCursor.current.y, 6, 0, Math.PI * 2);
+      ctx.fillStyle = "blue";
+      ctx.fill();
+    }
   };
 
   useEffect(() => {
-
     const start = async () => {
-
-      // start webcam
       const stream = await navigator.mediaDevices.getUserMedia({ video: true });
       videoRef.current.srcObject = stream;
-
       await videoRef.current.play();
-
-      // init mediapipe
       await initHandTracker();
+      
+      requestAnimationFrame(loop);
+      requestAnimationFrame(renderCursorsLoop); 
+    };
 
-      loop();
+    const renderCursorsLoop = () => {
+      drawCursors();
+      requestAnimationFrame(renderCursorsLoop);
     };
 
     let lastVideoTime = -1;
 
     const loop = () => {
-
       const video = videoRef.current;
-
-      if (video.currentTime !== lastVideoTime) {
-
+      if (video && video.currentTime !== lastVideoTime) {
         lastVideoTime = video.currentTime;
-
         const finger = detectHands(video);
 
         if (finger) {
-
           const canvas = canvasRef.current;
-
-          const x = (1 - finger.x) * canvas.width;
+          const x = (1 - finger.x) * canvas.width; 
           const y = finger.y * canvas.height;
 
-          const p = smooth(x, y);
-          cursorX.current = p.x;
-          cursorY.current = p.y;
+          localCursor.current = { x, y };
+
+          // --- 1. LOCAL DRAWING ---
           if (finger.draw) {
+            if (!localLastPos.current) {
+              // Pen just touched the canvas
+              localLastPos.current = { x, y };
+            } else {
+              // Pen is dragging, connect the line!
+              const ctx = canvasRef.current?.getContext("2d");
+              if (ctx) {
+                ctx.lineWidth = 3;
+                ctx.lineCap = "round";
+                ctx.strokeStyle = "black";
+                ctx.beginPath();
+                ctx.moveTo(localLastPos.current.x, localLastPos.current.y);
+                ctx.lineTo(x, y);
+                ctx.stroke();
+              }
+              // Update position for the next frame
+              localLastPos.current = { x, y };
+            }
+          } else {
+            // Pinch released, lift pen
+            localLastPos.current = null;
+          }
 
-            draw(p.x, p.y);
+          // --- 2. NETWORK EMITTER ---
+          const stateChanged = finger.draw !== lastEmitted.current.drawing;
+          // Only emit if moving more than 1 pixel (keeps network fast without losing curves)
+          const moved = Math.abs(x - lastEmitted.current.x) > 1 || Math.abs(y - lastEmitted.current.y) > 1;
 
+          if (stateChanged || moved) {
             socket.emit("draw_event", {
               roomId: "room1",
-              x: p.x,
-              y: p.y,
+              x: x,
+              y: y,
               drawing: finger.draw
             });
+            lastEmitted.current = { x, y, drawing: finger.draw };
+          }
 
-          } else {
-            // stop drawing when pinch released
-            drawing.current = false;
+        } else {
+          // Hand lost off camera
+          localLastPos.current = null;
+          if (lastEmitted.current.drawing === true) {
+            socket.emit("draw_event", { roomId: "room1", drawing: false });
+            lastEmitted.current.drawing = false;
           }
         }
       }
-      drawCursor();
       requestAnimationFrame(loop);
     };
 
     start();
 
-    // receive drawings from other users
-    socket.on("draw_event", (data) => {
+    // --- 3. BULLETPROOF REMOTE RECEIVER ---
+    const handleRemoteDraw = (data) => {
+      // Always update cursor position
+      remoteCursor.current = { x: data.x, y: data.y, active: true };
 
-      if (!data.drawing) {
-        drawing.current = false;
-        return;
+      if (data.drawing) {
+        if (!remoteLastPos.current) {
+          // Remote user just started pinching, put the blue pen down
+          remoteLastPos.current = { x: data.x, y: data.y };
+        } else {
+          // Remote user is dragging, connect the line!
+          const ctx = canvasRef.current?.getContext("2d");
+          if (ctx) {
+            ctx.lineWidth = 3;
+            ctx.lineCap = "round";
+            ctx.strokeStyle = "blue"; 
+            ctx.beginPath();
+            ctx.moveTo(remoteLastPos.current.x, remoteLastPos.current.y);
+            ctx.lineTo(data.x, data.y);
+            ctx.stroke();
+          }
+          // Update position for the next socket event
+          remoteLastPos.current = { x: data.x, y: data.y };
+        }
+      } else {
+        // Remote user let go of pinch, lift the blue pen
+        remoteLastPos.current = null;
       }
+    };
 
-      draw(data.x, data.y);
-    });
+    socket.on("draw_event", handleRemoteDraw);
 
+    return () => {
+      socket.off("draw_event", handleRemoteDraw);
+    };
   }, []);
 
   return (
     <div style={{ display: "flex", gap: "20px" }}>
-
       <div style={{ position: "relative" }}>
-
         <canvas
           ref={canvasRef}
           width={800}
           height={500}
-          style={{ border: "2px solid black" }}
+          style={{ border: "2px solid black", backgroundColor: "white" }} 
         />
-
         <canvas
           ref={cursorCanvasRef}
           width={800}
@@ -166,9 +182,7 @@ function Canvas() {
             pointerEvents: "none"
           }}
         />
-
       </div>
-
       <video
         ref={videoRef}
         width={300}
@@ -179,7 +193,6 @@ function Canvas() {
           transform: "scaleX(-1)"
         }}
       />
-
     </div>
   );
 }
