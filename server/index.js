@@ -25,9 +25,8 @@ io.on("connection", (socket) => {
     });
 
     socket.on("draw_event", (data) => {
-        // console.log("Draw received:", data); 
-        const { roomId, x, y } = data;
-        socket.to(roomId).emit("draw_event", { x, y });
+        // Just forward the exact payload you received to everyone else in the room
+        socket.to(data.roomId).emit("draw_event", data);
     });
 
     socket.on("disconnect", () => {

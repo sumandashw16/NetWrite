@@ -126,31 +126,40 @@ function Canvas() {
     start();
 
     // --- 3. BULLETPROOF REMOTE RECEIVER ---
+    // --- 3. BULLETPROOF REMOTE RECEIVER ---
     const handleRemoteDraw = (data) => {
-      // Always update cursor position
-      remoteCursor.current = { x: data.x, y: data.y, active: true };
+      // THE SMOKING GUN: Open your participant's browser console (F12) to see this!
+      console.log("RECEIVED FROM SERVER:", data); 
 
+      // Always update cursor position
+      if (data.x !== undefined && data.y !== undefined) {
+          remoteCursor.current = { x: data.x, y: data.y, active: true };
+      }
+
+      // If drawing is true, put ink on the screen NO MATTER WHAT
       if (data.drawing) {
-        if (!remoteLastPos.current) {
-          // Remote user just started pinching, put the blue pen down
-          remoteLastPos.current = { x: data.x, y: data.y };
-        } else {
-          // Remote user is dragging, connect the line!
-          const ctx = canvasRef.current?.getContext("2d");
-          if (ctx) {
-            ctx.lineWidth = 3;
-            ctx.lineCap = "round";
-            ctx.strokeStyle = "blue"; 
-            ctx.beginPath();
+        const ctx = canvasRef.current?.getContext("2d");
+        if (ctx) {
+          ctx.lineWidth = 3;
+          ctx.lineCap = "round";
+          ctx.strokeStyle = "blue"; 
+          ctx.beginPath();
+          
+          if (remoteLastPos.current) {
+            // Dragging: connect to the previous point
             ctx.moveTo(remoteLastPos.current.x, remoteLastPos.current.y);
-            ctx.lineTo(data.x, data.y);
-            ctx.stroke();
+          } else {
+            // Just touched down: Draw a visible dot exactly where the cursor is
+            ctx.moveTo(data.x, data.y);
           }
-          // Update position for the next socket event
-          remoteLastPos.current = { x: data.x, y: data.y };
+          
+          ctx.lineTo(data.x, data.y);
+          ctx.stroke();
         }
+        // Save this point for the next packet
+        remoteLastPos.current = { x: data.x, y: data.y };
       } else {
-        // Remote user let go of pinch, lift the blue pen
+        // Pen is lifted
         remoteLastPos.current = null;
       }
     };
