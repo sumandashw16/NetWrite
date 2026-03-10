@@ -19,6 +19,9 @@ function Canvas() {
   // Prevent network spam
   const lastEmitted = useRef({ x: 0, y: 0, drawing: false });
 
+  const colorRef = useRef("#000000");
+  const brushSizeRef = useRef(3);
+
   const drawCursors = () => {
     const ctx = cursorCanvasRef.current?.getContext("2d");
     if (!ctx) return;
@@ -97,9 +100,9 @@ function Canvas() {
               // Pen is dragging, connect the line!
               const ctx = canvasRef.current?.getContext("2d");
               if (ctx) {
-                ctx.lineWidth = 3;
+                ctx.lineWidth = brushSizeRef.current;
                 ctx.lineCap = "round";
-                ctx.strokeStyle = "black";
+                ctx.strokeStyle = colorRef.current;
                 ctx.beginPath();
                 ctx.moveTo(localLastPos.current.x, localLastPos.current.y);
                 ctx.lineTo(x, y);
@@ -123,7 +126,9 @@ function Canvas() {
               roomId: "room1",
               x: x,
               y: y,
-              drawing: finger.draw
+              drawing: finger.draw,
+              color: colorRef.current,
+              size: brushSizeRef.current
             });
             lastEmitted.current = { x, y, drawing: finger.draw };
           }
@@ -157,9 +162,9 @@ function Canvas() {
       if (data.drawing) {
         const ctx = canvasRef.current?.getContext("2d");
         if (ctx) {
-          ctx.lineWidth = 3;
+          ctx.lineWidth = data.size || 3;
           ctx.lineCap = "round";
-          ctx.strokeStyle = "blue"; 
+          ctx.strokeStyle = data.color || "blue";
           ctx.beginPath();
           
           if (remoteLastPos.current) {
@@ -241,6 +246,62 @@ function Canvas() {
           Clear Canvas
         </button>
       </div>
+      <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+        <video
+          ref={videoRef}
+          width={300}
+          height={200}
+          autoPlay
+          style={{
+            border: "2px solid black",
+            transform: "scaleX(-1)"
+          }}
+        />
+        
+        {/* NEW COLOR PICKER */}
+        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+          <label style={{ color: "white" }}>Pen Color:</label>
+          <input 
+            type="color" 
+            defaultValue="#000000"
+            onChange={(e) => { colorRef.current = e.target.value }} 
+            style={{ cursor: "pointer", width: "50px", height: "40px", padding: "0" }}
+          />
+        </div>
+
+        <button 
+          onClick={handleClearClick}
+          style={{ padding: "10px", fontSize: "16px", cursor: "pointer", background: "#ff4444", color: "white", border: "none", borderRadius: "5px" }}
+        >
+          Clear Canvas
+        </button>
+      </div>
+      {/* NEW TOOLBAR CONTROLS */}
+        <div style={{ display: "flex", alignItems: "center", gap: "15px", backgroundColor: "#222", padding: "10px", borderRadius: "8px" }}>
+          
+          <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
+            <label style={{ color: "white", fontFamily: "sans-serif" }}>Color:</label>
+            <input 
+              type="color" 
+              defaultValue="#000000"
+              onChange={(e) => { colorRef.current = e.target.value }} 
+              style={{ cursor: "pointer", width: "40px", height: "40px", padding: "0", border: "none" }}
+            />
+          </div>
+
+          <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
+            <label style={{ color: "white", fontFamily: "sans-serif" }}>Size:</label>
+            <input 
+              type="range" 
+              min="1" 
+              max="20" 
+              defaultValue="3"
+              onChange={(e) => { brushSizeRef.current = parseInt(e.target.value) }} 
+              style={{ cursor: "pointer" }}
+            />
+          </div>
+
+        </div>
     </div>
     
   );
