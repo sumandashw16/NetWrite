@@ -90,29 +90,33 @@ function Canvas() {
           const y = finger.y * canvas.height;
 
           localCursor.current = { x, y };
-
+          const isActive = finger.draw || finger.erase;
           // --- 1. LOCAL DRAWING ---
-          if (finger.draw) {
+          if (isActive) {
             if (!localLastPos.current) {
-              // Pen just touched the canvas
               localLastPos.current = { x, y };
             } else {
-              // Pen is dragging, connect the line!
               const ctx = canvasRef.current?.getContext("2d");
               if (ctx) {
-                ctx.lineWidth = brushSizeRef.current;
+                // ERASER MODE vs PEN MODE
+                if (finger.erase) {
+                  ctx.globalCompositeOperation = "destination-out";
+                  ctx.lineWidth = 30; // Make the eraser nice and thick!
+                } else {
+                  ctx.globalCompositeOperation = "source-over"; // Normal drawing
+                  ctx.lineWidth = brushSizeRef.current;
+                  ctx.strokeStyle = colorRef.current;
+                }
+
                 ctx.lineCap = "round";
-                ctx.strokeStyle = colorRef.current;
                 ctx.beginPath();
                 ctx.moveTo(localLastPos.current.x, localLastPos.current.y);
                 ctx.lineTo(x, y);
                 ctx.stroke();
               }
-              // Update position for the next frame
               localLastPos.current = { x, y };
             }
           } else {
-            // Pinch released, lift pen
             localLastPos.current = null;
           }
 
@@ -128,9 +132,10 @@ function Canvas() {
               y: y,
               drawing: finger.draw,
               color: colorRef.current,
-              size: brushSizeRef.current
+              size: brushSizeRef.current,
+              erasing: finger.erase
             });
-            lastEmitted.current = { x, y, drawing: finger.draw };
+            lastEmitted.current = { x, y, drawing: finger.draw, erasing: finger.erase };
           }
 
         } else {
@@ -148,30 +153,39 @@ function Canvas() {
     start();
 
     // --- 3. BULLETPROOF REMOTE RECEIVER ---
-    // --- 3. BULLETPROOF REMOTE RECEIVER ---
     const handleRemoteDraw = (data) => {
-      // THE SMOKING GUN: Open your participant's browser console (F12) to see this!
-      console.log("RECEIVED FROM SERVER:", data); 
+      // console.log("RECEIVED FROM SERVER:", data); // You can comment this out now if it's too noisy!
 
       // Always update cursor position
       if (data.x !== undefined && data.y !== undefined) {
           remoteCursor.current = { x: data.x, y: data.y, active: true };
       }
 
-      // If drawing is true, put ink on the screen NO MATTER WHAT
-      if (data.drawing) {
+      // NEW: Check if the remote user is EITHER drawing OR erasing
+      const isRemoteActive = data.drawing || data.erasing;
+
+      if (isRemoteActive) {
         const ctx = canvasRef.current?.getContext("2d");
         if (ctx) {
-          ctx.lineWidth = data.size || 3;
+          
+          // --- NEW: SWITCH BETWEEN PEN AND ERASER ---
+          if (data.erasing) {
+            ctx.globalCompositeOperation = "destination-out"; // This makes the ink transparent (erases)
+            ctx.lineWidth = 40; // Make the remote eraser nice and thick
+          } else {
+            ctx.globalCompositeOperation = "source-over"; // Normal drawing mode
+            ctx.lineWidth = data.size || 3;
+            ctx.strokeStyle = data.color || "blue";
+          }
+
           ctx.lineCap = "round";
-          ctx.strokeStyle = data.color || "blue";
           ctx.beginPath();
           
           if (remoteLastPos.current) {
             // Dragging: connect to the previous point
             ctx.moveTo(remoteLastPos.current.x, remoteLastPos.current.y);
           } else {
-            // Just touched down: Draw a visible dot exactly where the cursor is
+            // Just touched down
             ctx.moveTo(data.x, data.y);
           }
           
@@ -181,7 +195,7 @@ function Canvas() {
         // Save this point for the next packet
         remoteLastPos.current = { x: data.x, y: data.y };
       } else {
-        // Pen is lifted
+        // Pen AND Eraser are lifted
         remoteLastPos.current = null;
       }
     };

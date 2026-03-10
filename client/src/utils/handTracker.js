@@ -47,33 +47,48 @@ export function detectHands(video) {
   }
 
   const landmarks = result.landmarks[0];
-  const index = landmarks[8]; // index tip
-  const thumb = landmarks[4]; // thumb tip
+  const index = landmarks[8]; // Index tip
+  const thumb = landmarks[4]; // Thumb tip
+  
+  // NEW: Grab the extra points we need for the Eraser math
+  const wrist = landmarks[0];
+  const middleTip = landmarks[12];
+  const indexBase = landmarks[5];
+  const pinkyBase = landmarks[17];
 
-  // 1. Calculate 3D distance (x, y, and depth z) for accurate pinch detection
+  // 1. PINCH MATH (For Drawing)
   const dx = index.x - thumb.x;
   const dy = index.y - thumb.y;
   const dz = index.z - thumb.z;
   const distance = Math.sqrt(dx * dx + dy * dy + dz * dz);
 
-  // 2. Hysteresis thresholds to prevent the "flickering pen" effect
-  const PINCH_START = 0.04; // Must get this close to start drawing
-  const PINCH_STOP = 0.06;  // Must pull apart this far to stop drawing
+  if (distance < 0.04) isCurrentlyPinching = true;
+  else if (distance > 0.06) isCurrentlyPinching = false;
 
-  if (distance < PINCH_START) {
-    isCurrentlyPinching = true;
-  } else if (distance > PINCH_STOP) {
-    isCurrentlyPinching = false;
-  }
+  // 2. OPEN PALM MATH (For Erasing)
+  // First, calculate the width of the palm. We use this as a "ruler" so the 
+  // gesture works whether your hand is close to the camera or far away!
+  const palmDx = indexBase.x - pinkyBase.x;
+  const palmDy = indexBase.y - pinkyBase.y;
+  const palmDz = indexBase.z - pinkyBase.z;
+  const palmSize = Math.sqrt(palmDx * palmDx + palmDy * palmDy + palmDz * palmDz);
 
-  // 3. Target the midpoint between the fingers for a natural drawing feel
+  // Next, calculate how far the middle finger is from the wrist
+  const midDx = middleTip.x - wrist.x;
+  const midDy = middleTip.y - wrist.y;
+  const midDz = middleTip.z - wrist.z;
+  const midDist = Math.sqrt(midDx * midDx + midDy * midDy + midDz * midDz);
+
+  // If the finger is extended more than 1.8x the width of the palm, the hand is "Open".
+  // (We also make sure you aren't currently pinching to avoid accidental erasing).
+  const isErasing = (midDist / palmSize > 1.8) && !isCurrentlyPinching;
+
+  // 3. TARGET MIDPOINT
   const targetX = (index.x + thumb.x) / 2;
   const targetY = (index.y + thumb.y) / 2;
 
-  // 4. Exponential Moving Average (EMA) Smoothing
-  // This replaces the smooth() function you used to have in Canvas.jsx
-  const smoothingFactor = 0.5; // Tweak between 0.1 (smooth/laggy) and 0.9 (fast/jittery)
-
+  // 4. SMOOTHING
+  const smoothingFactor = 0.5;
   if (smoothedX === null || smoothedY === null) {
     smoothedX = targetX;
     smoothedY = targetY;
@@ -82,10 +97,11 @@ export function detectHands(video) {
     smoothedY = smoothedY + smoothingFactor * (targetY - smoothedY);
   }
 
-  // Return the perfectly packaged payload ready for your Canvas and Sockets
+  // Send BOTH states back to the Canvas
   return {
     x: smoothedX,
     y: smoothedY,
-    draw: isCurrentlyPinching
+    draw: isCurrentlyPinching,
+    erase: isErasing // <-- NEW
   };
 }
