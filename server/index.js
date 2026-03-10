@@ -32,6 +32,11 @@ io.on("connection", (socket) => {
     socket.on("disconnect", () => {
         console.log("user disconnected", socket.id);
     });
+
+    socket.on("clear_canvas", (data) => {
+        // Broadcast the clear command to the rest of the room
+        socket.to(data.roomId).emit("clear_canvas");
+    });
 });
 
 const PORT ="5000"

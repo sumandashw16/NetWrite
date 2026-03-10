@@ -40,6 +40,23 @@ function Canvas() {
     }
   };
 
+  // Reusable function to completely wipe the ink
+  const clearBoard = () => {
+    const ctx = canvasRef.current?.getContext("2d");
+    if (ctx) {
+      ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+    }
+    // Also reset the last known positions so lines don't accidentally connect across the wiped board
+    localLastPos.current = null;
+    remoteLastPos.current = null;
+  };
+
+  // What happens when YOU click the button
+  const handleClearClick = () => {
+    clearBoard(); // Clear your own screen
+    socket.emit("clear_canvas", { roomId: "room1" }); // Tell the server to tell everyone else
+  };
+
   useEffect(() => {
     const start = async () => {
       const stream = await navigator.mediaDevices.getUserMedia({ video: true });
@@ -165,9 +182,13 @@ function Canvas() {
     };
 
     socket.on("draw_event", handleRemoteDraw);
+    socket.on("clear_canvas", () => {
+      clearBoard();
+    });
 
     return () => {
       socket.off("draw_event", handleRemoteDraw);
+      socket.off("clear_canvas");
     };
   }, []);
 
@@ -202,7 +223,26 @@ function Canvas() {
           transform: "scaleX(-1)"
         }}
       />
+      <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+        <video
+          ref={videoRef}
+          width={300}
+          height={200}
+          autoPlay
+          style={{
+            border: "2px solid black",
+            transform: "scaleX(-1)"
+          }}
+        />
+        <button 
+          onClick={handleClearClick}
+          style={{ padding: "10px", fontSize: "16px", cursor: "pointer", background: "#ff4444", color: "white", border: "none", borderRadius: "5px" }}
+        >
+          Clear Canvas
+        </button>
+      </div>
     </div>
+    
   );
 }
 
