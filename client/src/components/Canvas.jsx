@@ -2,7 +2,7 @@ import { useRef, useEffect } from "react";
 import socket from "../utils/socket";
 import { initHandTracker, detectHands } from "../utils/handTracker";
 
-function Canvas() {
+function Canvas({ roomId }) {
   const canvasRef = useRef(null);
   const cursorCanvasRef = useRef(null);
   const videoRef = useRef(null);
@@ -57,10 +57,11 @@ function Canvas() {
   // What happens when YOU click the button
   const handleClearClick = () => {
     clearBoard(); // Clear your own screen
-    socket.emit("clear_canvas", { roomId: "room1" }); // Tell the server to tell everyone else
+    socket.emit("clear_canvas", { roomId: roomId }); // Tell the server to tell everyone else
   };
 
   useEffect(() => {
+    socket.emit("join_room", roomId);
     const start = async () => {
       const stream = await navigator.mediaDevices.getUserMedia({ video: true });
       videoRef.current.srcObject = stream;
@@ -127,7 +128,7 @@ function Canvas() {
 
           if (stateChanged || moved) {
             socket.emit("draw_event", {
-              roomId: "room1",
+              roomId: roomId,
               x: x,
               y: y,
               drawing: finger.draw,
@@ -142,7 +143,7 @@ function Canvas() {
           // Hand lost off camera
           localLastPos.current = null;
           if (lastEmitted.current.drawing === true) {
-            socket.emit("draw_event", { roomId: "room1", drawing: false });
+            socket.emit("draw_event", { roomId: roomId, drawing: false });
             lastEmitted.current.drawing = false;
           }
         }
@@ -212,112 +213,83 @@ function Canvas() {
   }, []);
 
   return (
-    <div style={{ display: "flex", gap: "20px" }}>
-      <div style={{ position: "relative" }}>
-        <canvas
-          ref={canvasRef}
-          width={800}
-          height={500}
-          style={{ border: "2px solid black", backgroundColor: "white" }} 
-        />
-        <canvas
-          ref={cursorCanvasRef}
-          width={800}
-          height={500}
-          style={{
-            position: "absolute",
-            left: 0,
-            top: 0,
-            pointerEvents: "none"
-          }}
-        />
-      </div>
-      <video
-        ref={videoRef}
-        width={300}
-        height={200}
-        autoPlay
-        style={{
-          border: "2px solid black",
-          transform: "scaleX(-1)"
-        }}
-      />
-      <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-        <video
-          ref={videoRef}
-          width={300}
-          height={200}
-          autoPlay
-          style={{
-            border: "2px solid black",
-            transform: "scaleX(-1)"
-          }}
-        />
-        <button 
-          onClick={handleClearClick}
-          style={{ padding: "10px", fontSize: "16px", cursor: "pointer", background: "#ff4444", color: "white", border: "none", borderRadius: "5px" }}
-        >
-          Clear Canvas
-        </button>
-      </div>
-      <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-        <video
-          ref={videoRef}
-          width={300}
-          height={200}
-          autoPlay
-          style={{
-            border: "2px solid black",
-            transform: "scaleX(-1)"
-          }}
-        />
-        
-        {/* NEW COLOR PICKER */}
-        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-          <label style={{ color: "white" }}>Pen Color:</label>
-          <input 
-            type="color" 
-            defaultValue="#000000"
-            onChange={(e) => { colorRef.current = e.target.value }} 
-            style={{ cursor: "pointer", width: "50px", height: "40px", padding: "0" }}
+    <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+      
+      {/* NEW: Display the room code at the top */}
+      <h2>Room Code: <span style={{ color: "#2196F3" }}>{roomId}</span></h2>
+
+      {/* Your existing layout wrapped inside */}
+      <div style={{ display: "flex", gap: "20px" }}>
+        <div style={{ position: "relative" }}>
+          <canvas
+            ref={canvasRef}
+            width={800}
+            height={500}
+            style={{ border: "2px solid black", backgroundColor: "white" }} 
+          />
+          <canvas
+            ref={cursorCanvasRef}
+            width={800}
+            height={500}
+            style={{
+              position: "absolute",
+              left: 0,
+              top: 0,
+              pointerEvents: "none"
+            }}
           />
         </div>
-
-        <button 
-          onClick={handleClearClick}
-          style={{ padding: "10px", fontSize: "16px", cursor: "pointer", background: "#ff4444", color: "white", border: "none", borderRadius: "5px" }}
-        >
-          Clear Canvas
-        </button>
-      </div>
-      {/* NEW TOOLBAR CONTROLS */}
-        <div style={{ display: "flex", alignItems: "center", gap: "15px", backgroundColor: "#222", padding: "10px", borderRadius: "8px" }}>
+        
+        {/* Video and Toolbar Side Panel */}
+        <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+          <video
+            ref={videoRef}
+            width={300}
+            height={200}
+            autoPlay
+            style={{
+              border: "2px solid black",
+              transform: "scaleX(-1)"
+            }}
+          />
           
-          <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
-            <label style={{ color: "white", fontFamily: "sans-serif" }}>Color:</label>
-            <input 
-              type="color" 
-              defaultValue="#000000"
-              onChange={(e) => { colorRef.current = e.target.value }} 
-              style={{ cursor: "pointer", width: "40px", height: "40px", padding: "0", border: "none" }}
-            />
+          <div style={{ display: "flex", alignItems: "center", gap: "15px", backgroundColor: "#222", padding: "10px", borderRadius: "8px" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
+              <label style={{ color: "white", fontFamily: "sans-serif" }}>Color:</label>
+              <input 
+                type="color" 
+                defaultValue="#000000"
+                onChange={(e) => { colorRef.current = e.target.value }} 
+                style={{ cursor: "pointer", width: "40px", height: "40px", padding: "0", border: "none" }}
+              />
+            </div>
+
+            <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
+              <label style={{ color: "white", fontFamily: "sans-serif" }}>Size:</label>
+              <input 
+                type="range" 
+                min="1" 
+                max="20" 
+                defaultValue="3"
+                onChange={(e) => { brushSizeRef.current = parseInt(e.target.value) }} 
+                style={{ cursor: "pointer" }}
+              />
+            </div>
           </div>
 
-          <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
-            <label style={{ color: "white", fontFamily: "sans-serif" }}>Size:</label>
-            <input 
-              type="range" 
-              min="1" 
-              max="20" 
-              defaultValue="3"
-              onChange={(e) => { brushSizeRef.current = parseInt(e.target.value) }} 
-              style={{ cursor: "pointer" }}
-            />
-          </div>
-
+          <button 
+            onClick={() => {
+              // Ensure we use the new dynamic roomId when clearing!
+              clearBoard();
+              socket.emit("clear_canvas", { roomId: roomId }); 
+            }}
+            style={{ padding: "10px", fontSize: "16px", cursor: "pointer", background: "#ff4444", color: "white", border: "none", borderRadius: "5px" }}
+          >
+            Clear Canvas
+          </button>
         </div>
+      </div>
     </div>
-    
   );
 }
 
