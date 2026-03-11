@@ -1,10 +1,18 @@
+require("dotenv").config()
 const express = require("express")
 const http = require("http")
 const { Server } = require("socket.io")
 const cors = require("cors")
+const mongoose = require("mongoose")
+
 
 const app = express()
 app.use(cors())
+app.use(express.json())
+
+mongoose.connect(process.env.MONGO_URI)
+  .then(() => console.log("✅ MongoDB Connected Successfully!"))
+  .catch((err) => console.log("❌ MongoDB Connection Error:", err));
 
 const server = http.createServer(app)
 
