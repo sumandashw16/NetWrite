@@ -2,7 +2,7 @@ import { useRef, useEffect } from "react";
 import socket from "../utils/socket";
 import { initHandTracker, detectHands } from "../utils/handTracker";
 
-function Canvas({ roomId }) {
+function Canvas({ roomId, onLeave }) {
   const canvasRef = useRef(null);
   const cursorCanvasRef = useRef(null);
   const videoRef = useRef(null);
@@ -62,17 +62,27 @@ function Canvas({ roomId }) {
 
   useEffect(() => {
     socket.emit("join_room", roomId);
+    
+    // 🛡️ NEW: Safe storage for our camera and a kill-switch for the loops
+    let localStream = null; 
+    let isRunning = true; 
+
     const start = async () => {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-      videoRef.current.srcObject = stream;
-      await videoRef.current.play();
+      localStream = await navigator.mediaDevices.getUserMedia({ video: true });
+      if (videoRef.current) {
+        videoRef.current.srcObject = localStream;
+        await videoRef.current.play();
+      }
       await initHandTracker();
       
-      requestAnimationFrame(loop);
-      requestAnimationFrame(renderCursorsLoop); 
+      if (isRunning) {
+        requestAnimationFrame(loop);
+        requestAnimationFrame(renderCursorsLoop); 
+      }
     };
 
     const renderCursorsLoop = () => {
+      if (!isRunning) return; // 🛑 Stops the loop if we left the room
       drawCursors();
       requestAnimationFrame(renderCursorsLoop);
     };
@@ -80,6 +90,8 @@ function Canvas({ roomId }) {
     let lastVideoTime = -1;
 
     const loop = () => {
+      if (!isRunning) return; // 🛑 Stops the loop if we left the room
+
       const video = videoRef.current;
       if (video && video.currentTime !== lastVideoTime) {
         lastVideoTime = video.currentTime;
@@ -87,11 +99,14 @@ function Canvas({ roomId }) {
 
         if (finger) {
           const canvas = canvasRef.current;
+          if (!canvas) return; // Safety check
+
           const x = (1 - finger.x) * canvas.width; 
           const y = finger.y * canvas.height;
 
           localCursor.current = { x, y };
           const isActive = finger.draw || finger.erase;
+          
           // --- 1. LOCAL DRAWING ---
           if (isActive) {
             if (!localLastPos.current) {
@@ -99,12 +114,11 @@ function Canvas({ roomId }) {
             } else {
               const ctx = canvasRef.current?.getContext("2d");
               if (ctx) {
-                // ERASER MODE vs PEN MODE
                 if (finger.erase) {
                   ctx.globalCompositeOperation = "destination-out";
-                  ctx.lineWidth = 30; // Make the eraser nice and thick!
+                  ctx.lineWidth = 30; 
                 } else {
-                  ctx.globalCompositeOperation = "source-over"; // Normal drawing
+                  ctx.globalCompositeOperation = "source-over"; 
                   ctx.lineWidth = brushSizeRef.current;
                   ctx.strokeStyle = colorRef.current;
                 }
@@ -123,7 +137,6 @@ function Canvas({ roomId }) {
 
           // --- 2. NETWORK EMITTER ---
           const stateChanged = finger.draw !== lastEmitted.current.drawing;
-          // Only emit if moving more than 1 pixel (keeps network fast without losing curves)
           const moved = Math.abs(x - lastEmitted.current.x) > 1 || Math.abs(y - lastEmitted.current.y) > 1;
 
           if (stateChanged || moved) {
@@ -140,7 +153,6 @@ function Canvas({ roomId }) {
           }
 
         } else {
-          // Hand lost off camera
           localLastPos.current = null;
           if (lastEmitted.current.drawing === true) {
             socket.emit("draw_event", { roomId: roomId, drawing: false });
@@ -155,26 +167,20 @@ function Canvas({ roomId }) {
 
     // --- 3. BULLETPROOF REMOTE RECEIVER ---
     const handleRemoteDraw = (data) => {
-      // console.log("RECEIVED FROM SERVER:", data); // You can comment this out now if it's too noisy!
-
-      // Always update cursor position
       if (data.x !== undefined && data.y !== undefined) {
           remoteCursor.current = { x: data.x, y: data.y, active: true };
       }
 
-      // NEW: Check if the remote user is EITHER drawing OR erasing
       const isRemoteActive = data.drawing || data.erasing;
 
       if (isRemoteActive) {
         const ctx = canvasRef.current?.getContext("2d");
         if (ctx) {
-          
-          // --- NEW: SWITCH BETWEEN PEN AND ERASER ---
           if (data.erasing) {
-            ctx.globalCompositeOperation = "destination-out"; // This makes the ink transparent (erases)
-            ctx.lineWidth = 40; // Make the remote eraser nice and thick
+            ctx.globalCompositeOperation = "destination-out"; 
+            ctx.lineWidth = 40; 
           } else {
-            ctx.globalCompositeOperation = "source-over"; // Normal drawing mode
+            ctx.globalCompositeOperation = "source-over"; 
             ctx.lineWidth = data.size || 3;
             ctx.strokeStyle = data.color || "blue";
           }
@@ -183,20 +189,16 @@ function Canvas({ roomId }) {
           ctx.beginPath();
           
           if (remoteLastPos.current) {
-            // Dragging: connect to the previous point
             ctx.moveTo(remoteLastPos.current.x, remoteLastPos.current.y);
           } else {
-            // Just touched down
             ctx.moveTo(data.x, data.y);
           }
           
           ctx.lineTo(data.x, data.y);
           ctx.stroke();
         }
-        // Save this point for the next packet
         remoteLastPos.current = { x: data.x, y: data.y };
       } else {
-        // Pen AND Eraser are lifted
         remoteLastPos.current = null;
       }
     };
@@ -206,11 +208,18 @@ function Canvas({ roomId }) {
       clearBoard();
     });
 
+    // 🧹 THE ULTIMATE CLEANUP
     return () => {
+      isRunning = false; // Instantly kills the drawing loops
       socket.off("draw_event", handleRemoteDraw);
       socket.off("clear_canvas");
+
+      // Uses the safely stored localStream to guarantee the camera dies
+      if (localStream) {
+        localStream.getTracks().forEach(track => track.stop());
+      }
     };
-  }, []);
+  }, [roomId]);
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
@@ -286,6 +295,12 @@ function Canvas({ roomId }) {
             style={{ padding: "10px", fontSize: "16px", cursor: "pointer", background: "#ff4444", color: "white", border: "none", borderRadius: "5px" }}
           >
             Clear Canvas
+          </button>
+          <button 
+            onClick={onLeave}
+            style={{ padding: "10px", fontSize: "16px", cursor: "pointer", background: "#555", color: "white", border: "none", borderRadius: "5px" }}
+          >
+            Leave Room
           </button>
         </div>
       </div>
