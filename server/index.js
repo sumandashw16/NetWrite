@@ -6,6 +6,7 @@ const cors = require("cors")
 const mongoose = require("mongoose")
 const bcrypt = require("bcrypt")
 const User = require("./models/User")
+const jwt = require("jsonwebtoken")
 
 
 const app = express()
@@ -44,6 +45,42 @@ app.post("/register", async (req, res) => {
 
     } catch (error) {
         console.error("Registration Error:", error);
+        res.status(500).json({ message: "Internal server error" });
+    }
+});
+
+app.post("/login", async (req, res) => {
+    try {
+        const { email, password } = req.body;
+
+        // 1. Check if the user actually exists in the database
+        const user = await User.findOne({ email });
+        if (!user) {
+            return res.status(400).json({ message: "User not found!" });
+        }
+
+        // 2. Compare the password they just typed with the scrambled one in the DB
+        const isPasswordValid = await bcrypt.compare(password, user.password);
+        if (!isPasswordValid) {
+            return res.status(400).json({ message: "Invalid credentials!" });
+        }
+
+        // 3. The password is correct! Let's generate their VIP Wristband (JWT)
+        const token = jwt.sign(
+            { userId: user._id, username: user.username }, // Data to hide in the wristband
+            process.env.JWT_SECRET,                        // Your secret signature
+            { expiresIn: "1h" }                            // Wristband expires in 1 hour
+        );
+
+        // 4. Send the wristband and username back to the user
+        res.status(200).json({ 
+            message: "Login successful!", 
+            token: token,
+            username: user.username 
+        });
+
+    } catch (error) {
+        console.error("Login Error:", error);
         res.status(500).json({ message: "Internal server error" });
     }
 });
