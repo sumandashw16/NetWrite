@@ -4,6 +4,8 @@ const http = require("http")
 const { Server } = require("socket.io")
 const cors = require("cors")
 const mongoose = require("mongoose")
+const bcrypt = require("bcrypt")
+const User = require("./models/User")
 
 
 const app = express()
@@ -13,6 +15,39 @@ app.use(express.json())
 mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log("✅ MongoDB Connected Successfully!"))
   .catch((err) => console.log("❌ MongoDB Connection Error:", err));
+
+
+//Authentication Process
+app.post("/register", async (req, res) => {
+    try {
+        // 1. Grab the data the user typed into the frontend
+        const { username, email, password } = req.body;
+
+        // 2. Check if the email is already registered
+        const existingUser = await User.findOne({ email });
+        if (existingUser) {
+            return res.status(400).json({ message: "User already exists!" });
+        }
+
+        // 3. Hash the password into gibberish (10 represents the security complexity)
+        const hashedPassword = await bcrypt.hash(password, 10);
+
+        // 4. Create the new user and save them to MongoDB
+        const newUser = new User({
+            username,
+            email,
+            password: hashedPassword
+        });
+        
+        await newUser.save();
+        res.status(201).json({ message: "User created successfully!" });
+
+    } catch (error) {
+        console.error("Registration Error:", error);
+        res.status(500).json({ message: "Internal server error" });
+    }
+});
+
 
 const server = http.createServer(app)
 
