@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import "./Register.css"; // 🏎️ Loading the Team Registration styles
 
 export default function Register() {
   const [username, setUsername] = useState("");
@@ -10,11 +11,11 @@ export default function Register() {
   const navigate = useNavigate();
 
   const handleRegister = async (e) => {
-    e.preventDefault(); // Prevents the page from refreshing
+    e.preventDefault();
     setError("");
 
     try {
-      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/Register`, {
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username, email, password }),
@@ -23,41 +24,49 @@ export default function Register() {
       const data = await response.json();
 
       if (response.ok) {
-        alert("Registration successful! Please log in.");
-        navigate("/login"); // Send them to the login page
+        alert("Registration successful! Welcome to the Team.");
+        navigate("/login"); 
       } else {
         setError(data.message || "Registration failed");
       }
     } catch (err) {
-      setError("Server error. Is the backend running?");
+      setError("Server error. Is the pit crew online?");
     }
   };
 
   return (
-    <div style={{ textAlign: "center", marginTop: "50px" }}>
-      <h2>Sign Up for NetWrite</h2>
-      {error && <p style={{ color: "red" }}>{error}</p>}
-      
-      <form onSubmit={handleRegister} style={{ display: "flex", flexDirection: "column", width: "300px", margin: "0 auto" }}>
-        <input 
-          type="text" placeholder="Username" required 
-          value={username} onChange={(e) => setUsername(e.target.value)} 
-          style={{ marginBottom: "10px", padding: "8px" }}
-        />
-        <input 
-          type="email" placeholder="Email" required 
-          value={email} onChange={(e) => setEmail(e.target.value)} 
-          style={{ marginBottom: "10px", padding: "8px" }}
-        />
-        <input 
-          type="password" placeholder="Password" required 
-          value={password} onChange={(e) => setPassword(e.target.value)} 
-          style={{ marginBottom: "10px", padding: "8px" }}
-        />
-        <button type="submit" style={{ padding: "10px", cursor: "pointer" }}>Sign Up</button>
-      </form>
-      
-      <p>Already have an account? <button onClick={() => navigate("/login")}>Login</button></p>
+    <div className="auth-page">
+      <div className="auth-card">
+        <h2 className="auth-title">TEAM SIGN-UP</h2>
+        
+        {error && <div className="error-badge">{error}</div>}
+        
+        <form onSubmit={handleRegister} className="auth-form">
+          <input 
+            type="text" placeholder="CHOOSE CALLSIGN (Username)" required 
+            value={username} onChange={(e) => setUsername(e.target.value)} 
+            className="auth-input"
+          />
+          <input 
+            type="email" placeholder="OFFICIAL EMAIL" required 
+            value={email} onChange={(e) => setEmail(e.target.value)} 
+            className="auth-input"
+          />
+          <input 
+            type="password" placeholder="CREATE SECURITY KEY" required 
+            value={password} onChange={(e) => setPassword(e.target.value)} 
+            className="auth-input"
+          />
+          <button type="submit" className="btn-register">Join the Grid</button>
+        </form>
+        
+        <p className="auth-footer">
+          Already a Team Member? 
+          <button className="btn-text" onClick={() => navigate("/login")}>
+            Access Paddock
+          </button>
+        </p>
+      </div>
     </div>
   );
 }

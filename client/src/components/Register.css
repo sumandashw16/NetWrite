@@ -1,0 +1,99 @@
+/* Register.css */
+
+.auth-page {
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: radial-gradient(circle at center, #1a0000 0%, #050505 100%);
+  padding: 20px;
+}
+
+.auth-card {
+  background-color: var(--carbon-fiber);
+  border: 1px solid #333;
+  /* Register gets a yellow accent top border to differentiate from Login */
+  border-top: 4px solid var(--modena-yellow); 
+  padding: 40px;
+  border-radius: 4px;
+  width: 100%;
+  max-width: 400px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+  text-align: center;
+}
+
+.auth-title {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 1.8rem;
+  margin-bottom: 30px;
+  letter-spacing: 3px;
+  color: var(--pure-white);
+}
+
+.error-badge {
+  background-color: rgba(255, 40, 0, 0.1);
+  border: 1px solid var(--ferrari-red);
+  color: var(--ferrari-red);
+  padding: 10px;
+  margin-bottom: 20px;
+  font-size: 0.85rem;
+  border-radius: 4px;
+}
+
+.auth-form {
+  display: flex;
+  flex-direction: column;
+}
+
+.auth-input {
+  background: #1a1a1a;
+  border: 1px solid #333;
+  color: white;
+  padding: 15px;
+  margin-bottom: 15px;
+  border-radius: 0;
+  font-size: 1rem;
+  transition: border-color 0.3s ease;
+}
+
+.auth-input:focus {
+  outline: none;
+  border-color: var(--modena-yellow);
+}
+
+.btn-register {
+  background-color: var(--ferrari-red);
+  color: white;
+  border: none;
+  padding: 15px;
+  font-family: 'Orbitron', sans-serif;
+  font-weight: bold;
+  text-transform: uppercase;
+  cursor: pointer;
+  clip-path: polygon(5% 0, 100% 0, 95% 100%, 0 100%);
+  transition: all 0.2s ease;
+  margin-top: 10px;
+}
+
+.btn-register:hover {
+  background-color: var(--modena-yellow);
+  color: black;
+  transform: scale(1.02);
+}
+
+.auth-footer {
+  margin-top: 30px;
+  color: #888;
+  font-size: 0.9rem;
+}
+
+.btn-text {
+  background: none;
+  border: none;
+  color: var(--modena-yellow);
+  cursor: pointer;
+  font-weight: bold;
+  text-decoration: underline;
+  padding: 0;
+  margin-left: 5px;
+}
