@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import "./Login.css"; // 🏎️ Import the new styling
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -22,11 +23,8 @@ export default function Login() {
       const data = await response.json();
 
       if (response.ok) {
-        // 🔐 THE VAULT: Save the VIP Wristband and Username to the browser
         localStorage.setItem("token", data.token);
         localStorage.setItem("username", data.username);
-        
-        // Boom! Send them to the main whiteboard app
         navigate("/"); 
       } else {
         setError(data.message || "Login failed");
@@ -37,25 +35,33 @@ export default function Login() {
   };
 
   return (
-    <div style={{ textAlign: "center", marginTop: "50px" }}>
-      <h2>Login to NetWrite</h2>
-      {error && <p style={{ color: "red" }}>{error}</p>}
-      
-      <form onSubmit={handleLogin} style={{ display: "flex", flexDirection: "column", width: "300px", margin: "0 auto" }}>
-        <input 
-          type="email" placeholder="Email" required 
-          value={email} onChange={(e) => setEmail(e.target.value)} 
-          style={{ marginBottom: "10px", padding: "8px" }}
-        />
-        <input 
-          type="password" placeholder="Password" required 
-          value={password} onChange={(e) => setPassword(e.target.value)} 
-          style={{ marginBottom: "10px", padding: "8px" }}
-        />
-        <button type="submit" style={{ padding: "10px", cursor: "pointer" }}>Login</button>
-      </form>
-      
-      <p>Need an account? <button onClick={() => navigate("/register")}>Sign Up</button></p>
+    <div className="auth-page">
+      <div className="auth-card">
+        <h2 className="auth-title">ACCESS PORTAL</h2>
+        
+        {error && <div className="error-badge">{error}</div>}
+        
+        <form onSubmit={handleLogin} className="auth-form">
+          <input 
+            type="email" placeholder="USER EMAIL" required 
+            value={email} onChange={(e) => setEmail(e.target.value)} 
+            className="auth-input"
+          />
+          <input 
+            type="password" placeholder="SECURITY KEY" required 
+            value={password} onChange={(e) => setPassword(e.target.value)} 
+            className="auth-input"
+          />
+          <button type="submit" className="btn-login">Start Engine</button>
+        </form>
+        
+        <p className="auth-footer">
+          New Team Member? 
+          <button className="btn-text" onClick={() => navigate("/register")}>
+            Apply for Entry
+          </button>
+        </p>
+      </div>
     </div>
   );
 }
