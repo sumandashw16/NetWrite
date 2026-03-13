@@ -1,110 +1,17 @@
-/* --- SCUDERIA FERRARI THEME --- */
+/* index.css */
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Inter:wght@300;400;700&display=swap');
+
 :root {
-  --rosso-corsa: #E32636;       /* The iconic Ferrari Racing Red */
-  --modena-yellow: #FDF900;     /* The Ferrari Shield Yellow */
-  --carbon-fiber: #0A0A0A;      /* Deep black for background */
-  --asphalt: #1A1A1A;           /* Slightly lighter black for cards */
-  --white-text: #F5F5F5;
+  --ferrari-red: #ff2800;
+  --rosso-corsa: #cc0000;
+  --carbon-fiber: #111111;
+  --modena-yellow: #ffeb00;
+  --glass-effect: rgba(255, 255, 255, 0.05);
 }
 
 body {
-  background-color: var(--carbon-fiber);
-  color: var(--white-text);
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
   margin: 0;
-  padding: 0;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 100vh;
-}
-
-/* The Dashboard/Login Cards */
-.ferrari-card {
-  background-color: var(--asphalt);
-  border-top: 4px solid var(--rosso-corsa);
-  border-radius: 8px;
-  padding: 2.5rem;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
-  width: 100%;
-  max-width: 400px;
-  text-align: center;
-}
-
-/* Aggressive Input Fields */
-input {
-  width: 100%;
-  padding: 12px 15px;
-  margin: 10px 0 20px 0;
-  background-color: #2A2A2A;
-  border: 1px solid #333;
-  color: var(--white-text);
-  border-radius: 4px;
-  font-size: 1rem;
-  box-sizing: border-box;
-  transition: border-color 0.3s ease;
-}
-
-input:focus {
-  outline: none;
-  border-color: var(--rosso-corsa);
-  box-shadow: 0 0 8px rgba(227, 38, 54, 0.3);
-}
-
-/* The Engine Start Button */
-button {
-  width: 100%;
-  background-color: var(--rosso-corsa);
+  background-color: #050505;
   color: white;
-  border: 2px solid var(--rosso-corsa);
-  padding: 12px 20px;
-  font-size: 1rem;
-  font-weight: bold;
-  text-transform: uppercase;
-  letter-spacing: 1.5px;
-  border-radius: 4px;
-  cursor: pointer;
-  transition: all 0.2s ease-in-out;
-}
-
-button:hover {
-  background-color: transparent;
-  color: var(--rosso-corsa);
-  box-shadow: 0 0 15px rgba(227, 38, 54, 0.4);
-}
-
-/* Secondary Button (for links/navigation) */
-button.secondary {
-  background-color: transparent;
-  border-color: #444;
-  color: #AAA;
-  margin-top: 10px;
-}
-
-button.secondary:hover {
-  border-color: var(--modena-yellow);
-  color: var(--modena-yellow);
-  box-shadow: none;
-}
-
-/* Whiteboard Container */
-.whiteboard-container {
-  display: flex;
-  flex-direction: column;
-  width: 95vw;
-  height: 90vh;
-  background-color: var(--asphalt);
-  border: 1px solid #333;
-  border-radius: 12px;
-  overflow: hidden;
-  box-shadow: 0 0 20px rgba(227, 38, 54, 0.1);
-}
-
-.whiteboard-header {
-  background-color: var(--carbon-fiber);
-  border-bottom: 2px solid var(--rosso-corsa);
-  padding: 15px 20px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+  font-family: 'Inter', sans-serif;
 }
