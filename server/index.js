@@ -10,7 +10,10 @@ const jwt = require("jsonwebtoken")
 
 
 const app = express()
-app.use(cors())
+app.use(cors({
+    origin: "*", // Allows any frontend to connect
+    methods: ["GET", "POST"]
+}));
 app.use(express.json())
 
 mongoose.connect(process.env.MONGO_URI)
@@ -90,10 +93,10 @@ const server = http.createServer(app)
 
 const io = new Server(server, {
     cors: {
-        origin: "http://localhost:5173",
-        methods: ["GET", "POST"],
-    },
-})
+        origin: "*", // Allows any frontend to connect
+        methods: ["GET", "POST"]
+    }
+});
 
 io.on("connection", (socket) => {
     console.log("user connected", socket.id);
