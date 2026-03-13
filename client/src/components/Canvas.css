@@ -1,0 +1,125 @@
+/* Canvas.css */
+
+.canvas-layout-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 30px;
+  background: radial-gradient(circle at top left, rgba(255, 40, 0, 0.1), transparent);
+  min-height: 100vh;
+}
+
+.room-header {
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 2px;
+  border-left: 5px solid var(--ferrari-red);
+  padding-left: 15px;
+  margin-bottom: 20px;
+}
+
+.room-code-highlight {
+  color: var(--ferrari-red);
+  text-shadow: 0 0 10px rgba(255, 40, 0, 0.5);
+}
+
+.main-cockpit {
+  display: flex;
+  gap: 30px;
+  align-items: flex-start;
+}
+
+/* The Drawing Surface */
+.canvas-frame {
+  position: relative;
+  border: 2px solid #333;
+  border-radius: 4px;
+  box-shadow: 0 0 40px rgba(0,0,0,0.5);
+  background-color: white; /* Keep drawing board white for clarity */
+}
+
+/* The Side Telemetry Panel */
+.side-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  width: 320px;
+}
+
+.video-feed {
+  border: 3px solid #222;
+  border-bottom: 3px solid var(--ferrari-red);
+  border-radius: 8px;
+  background: black;
+  transform: scaleX(-1);
+  box-shadow: 0 10px 20px rgba(0,0,0,0.4);
+}
+
+/* Ferrari Control Bar */
+.control-bar {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  background: var(--carbon-fiber);
+  border: 1px solid #333;
+  padding: 20px;
+  border-radius: 8px;
+}
+
+.tool-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-family: 'Orbitron', sans-serif;
+  font-size: 0.8rem;
+  color: #888;
+}
+
+/* Inputs */
+input[type="color"] {
+  -webkit-appearance: none;
+  border: none;
+  width: 45px;
+  height: 45px;
+  cursor: pointer;
+  background: none;
+}
+input[type="color"]::-webkit-color-swatch {
+  border-radius: 4px;
+  border: 2px solid #444;
+}
+
+input[type="range"] {
+  accent-color: var(--ferrari-red);
+  cursor: pointer;
+}
+
+/* Buttons */
+.btn-action {
+  font-family: 'Orbitron', sans-serif;
+  padding: 12px;
+  border: none;
+  border-radius: 4px;
+  font-weight: bold;
+  cursor: pointer;
+  text-transform: uppercase;
+  transition: all 0.2s ease;
+}
+
+.btn-clear {
+  background-color: var(--ferrari-red);
+  color: white;
+}
+.btn-clear:hover {
+  background-color: white;
+  color: var(--ferrari-red);
+}
+
+.btn-leave {
+  background-color: transparent;
+  border: 1px solid #444;
+  color: #888;
+}
+.btn-leave:hover {
+  border-color: var(--modena-yellow);
+  color: var(--modena-yellow);
+}

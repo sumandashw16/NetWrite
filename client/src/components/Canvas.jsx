@@ -1,6 +1,7 @@
 import { useRef, useEffect } from "react";
 import socket from "../utils/socket";
 import { initHandTracker, detectHands } from "../utils/handTracker";
+import "./Canvas.css";
 
 function Canvas({ roomId, onLeave }) {
   const canvasRef = useRef(null);
@@ -222,19 +223,18 @@ function Canvas({ roomId, onLeave }) {
   }, [roomId]);
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-      
-      {/* NEW: Display the room code at the top */}
-      <h2>Room Code: <span style={{ color: "#2196F3" }}>{roomId}</span></h2>
+    <div className="canvas-layout-wrapper">
+      <h2 className="room-header">
+        TELEMETRY LINK: <span className="room-code-highlight">{roomId}</span>
+      </h2>
 
-      {/* Your existing layout wrapped inside */}
-      <div style={{ display: "flex", gap: "20px" }}>
-        <div style={{ position: "relative" }}>
+      <div className="main-cockpit">
+        {/* DRAWING ZONE */}
+        <div className="canvas-frame">
           <canvas
             ref={canvasRef}
             width={800}
             height={500}
-            style={{ border: "2px solid black", backgroundColor: "white" }} 
           />
           <canvas
             ref={cursorCanvasRef}
@@ -249,59 +249,51 @@ function Canvas({ roomId, onLeave }) {
           />
         </div>
         
-        {/* Video and Toolbar Side Panel */}
-        <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+        {/* CONTROL SIDEBAR */}
+        <div className="side-panel">
           <video
             ref={videoRef}
-            width={300}
-            height={200}
+            width={320}
+            height={240}
             autoPlay
-            style={{
-              border: "2px solid black",
-              transform: "scaleX(-1)"
-            }}
+            className="video-feed"
           />
           
-          <div style={{ display: "flex", alignItems: "center", gap: "15px", backgroundColor: "#222", padding: "10px", borderRadius: "8px" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
-              <label style={{ color: "white", fontFamily: "sans-serif" }}>Color:</label>
+          <div className="control-bar">
+            <div className="tool-row">
+              <label>INK COLOR</label>
               <input 
                 type="color" 
                 defaultValue="#000000"
                 onChange={(e) => { colorRef.current = e.target.value }} 
-                style={{ cursor: "pointer", width: "40px", height: "40px", padding: "0", border: "none" }}
               />
             </div>
 
-            <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
-              <label style={{ color: "white", fontFamily: "sans-serif" }}>Size:</label>
+            <div className="tool-row">
+              <label>BRUSH WIDTH</label>
               <input 
                 type="range" 
                 min="1" 
                 max="20" 
                 defaultValue="3"
                 onChange={(e) => { brushSizeRef.current = parseInt(e.target.value) }} 
-                style={{ cursor: "pointer" }}
               />
             </div>
-          </div>
 
-          <button 
-            onClick={() => {
-              // Ensure we use the new dynamic roomId when clearing!
-              clearBoard();
-              socket.emit("clear_canvas", { roomId: roomId }); 
-            }}
-            style={{ padding: "10px", fontSize: "16px", cursor: "pointer", background: "#ff4444", color: "white", border: "none", borderRadius: "5px" }}
-          >
-            Clear Canvas
-          </button>
-          <button 
-            onClick={onLeave}
-            style={{ padding: "10px", fontSize: "16px", cursor: "pointer", background: "#555", color: "white", border: "none", borderRadius: "5px" }}
-          >
-            Leave Room
-          </button>
+            <button 
+              className="btn-action btn-clear"
+              onClick={handleClearClick}
+            >
+              Reset Board
+            </button>
+            
+            <button 
+              className="btn-action btn-leave"
+              onClick={onLeave}
+            >
+              Exit Pit Lane
+            </button>
+          </div>
         </div>
       </div>
     </div>
