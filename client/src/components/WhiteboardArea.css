@@ -1,0 +1,156 @@
+/* WhiteboardArea.css */
+
+.dashboard-container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(circle at bottom, #1a0000 0%, #050505 100%);
+  color: white;
+  padding: 20px;
+}
+
+.dashboard-header {
+  text-align: center;
+  margin-bottom: 40px;
+}
+
+.dashboard-header h1 {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 3rem;
+  letter-spacing: 4px;
+  background: linear-gradient(to right, var(--ferrari-red), var(--modena-yellow));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  margin-bottom: 10px;
+}
+
+.welcome-text {
+  font-size: 1.1rem;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+}
+
+.username-highlight {
+  color: var(--modena-yellow);
+  font-weight: bold;
+}
+
+.mission-control-card {
+  background-color: var(--carbon-fiber);
+  border: 1px solid #333;
+  border-bottom: 4px solid var(--ferrari-red);
+  padding: 50px;
+  border-radius: 8px;
+  box-shadow: 0 30px 60px rgba(0, 0, 0, 0.6);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  max-width: 800px;
+  width: 100%;
+}
+
+.actions-grid {
+  display: flex;
+  gap: 60px;
+  margin-bottom: 40px;
+  width: 100%;
+  justify-content: center;
+}
+
+.action-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  flex: 1;
+}
+
+.action-section h3 {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 1.2rem;
+  color: #eee;
+  margin-bottom: 10px;
+}
+
+.divider {
+  width: 2px;
+  background: linear-gradient(to bottom, transparent, #333, transparent);
+}
+
+/* Host & Join Buttons */
+.btn-host {
+  background-color: var(--ferrari-red);
+  color: white;
+  border: none;
+  padding: 20px 40px;
+  font-family: 'Orbitron', sans-serif;
+  font-size: 1.1rem;
+  font-weight: bold;
+  cursor: pointer;
+  clip-path: polygon(10% 0, 100% 0, 90% 100%, 0 100%);
+  transition: all 0.3s ease;
+}
+
+.btn-host:hover {
+  background-color: white;
+  color: var(--ferrari-red);
+  transform: translateY(-5px);
+  box-shadow: 0 10px 20px rgba(227, 38, 54, 0.3);
+}
+
+.btn-join {
+  background-color: transparent;
+  border: 2px solid var(--modena-yellow);
+  color: var(--modena-yellow);
+  padding: 15px 40px;
+  font-family: 'Orbitron', sans-serif;
+  font-size: 1rem;
+  font-weight: bold;
+  cursor: pointer;
+  clip-path: polygon(10% 0, 100% 0, 90% 100%, 0 100%);
+  transition: all 0.3s ease;
+}
+
+.btn-join:hover {
+  background-color: var(--modena-yellow);
+  color: black;
+  transform: translateY(-5px);
+}
+
+.room-input {
+  background: #1a1a1a;
+  border: 1px solid #444;
+  color: white;
+  padding: 12px;
+  font-family: 'Orbitron', sans-serif;
+  font-size: 1.2rem;
+  text-align: center;
+  width: 180px;
+  border-radius: 4px;
+}
+
+.room-input:focus {
+  outline: none;
+  border-color: var(--modena-yellow);
+}
+
+.btn-logout {
+  background: none;
+  border: 1px solid #444;
+  color: #666;
+  padding: 12px 30px;
+  cursor: pointer;
+  font-family: 'Orbitron', sans-serif;
+  font-size: 0.8rem;
+  transition: all 0.3s;
+  width: 200px;
+  text-transform: uppercase;
+}
+
+.btn-logout:hover {
+  border-color: #ff4d4d;
+  color: #ff4d4d;
+}
