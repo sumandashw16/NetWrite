@@ -119,19 +119,14 @@ io.on("connection", (socket) => {
   });
 
   socket.on("draw_event", (data) => {
-    // ✅ NEW: verify this socket actually joined the room it's claiming.
-    // Prevents a rogue client from injecting draw events into arbitrary rooms.
     const joinedRoom = socketRooms.get(socket.id);
     if (!joinedRoom || joinedRoom !== data.roomId) return;
-
     socket.to(data.roomId).emit("draw_event", data);
   });
 
   socket.on("clear_canvas", (data) => {
-    // ✅ NEW: same room guard as draw_event
     const joinedRoom = socketRooms.get(socket.id);
     if (!joinedRoom || joinedRoom !== data.roomId) return;
-
     socket.to(data.roomId).emit("clear_canvas");
   });
 

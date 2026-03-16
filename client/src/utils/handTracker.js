@@ -29,8 +29,8 @@ const WASM_URL =
  * Pinch ratio thresholds (pinchDist / palmWidth).
  * The gap between ON and OFF creates the dead-zone that kills state flicker.
  */
-const PINCH_ON_THRESHOLD  = 0.38; // tighter than before → enter DRAW
-const PINCH_OFF_THRESHOLD = 0.52; // must open wider    → exit  DRAW
+const PINCH_ON_THRESHOLD  = 0.65; // generous — matches original 80% feel
+const PINCH_OFF_THRESHOLD = 0.80; // must open wider to exit DRAW
 
 /**
  * Adaptive smoothing bounds.
@@ -46,7 +46,7 @@ const VELOCITY_SCALE = 80; // normalises raw pixel-space velocity into [0,1]
  * How many consecutive frames a new gesture must be seen
  * before we commit to it (hysteresis debounce).
  */
-const GESTURE_DEBOUNCE_FRAMES = 3;
+const GESTURE_DEBOUNCE_FRAMES = 2;
 
 /**
  * Finger curl: ratio of tip-to-wrist vs MCP-to-wrist.
