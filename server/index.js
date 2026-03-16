@@ -82,28 +82,14 @@ const io = new Server(server, {
   cors: { origin: ALLOWED_ORIGIN, methods: ["GET", "POST"] }
 });
 
-// ✅ NEW: Socket auth middleware.
-// Every connection must pass a valid JWT in the handshake auth object.
-// Frontend should connect with: socket = io(URL, { auth: { token } })
-io.use((socket, next) => {
-  const token = socket.handshake.auth?.token;
-  if (!token) return next(new Error("Authentication required."));
 
-  try {
-    const payload = jwt.verify(token, process.env.JWT_SECRET);
-    socket.user = payload; // attach decoded user to socket for later use
-    next();
-  } catch {
-    next(new Error("Invalid or expired token."));
-  }
-});
 
 // ✅ NEW: track which room each socket has joined so we can validate emits.
 // Map<socketId, roomId>
 const socketRooms = new Map();
 
 io.on("connection", (socket) => {
-  console.log(`🔌 Connected: ${socket.user.username} (${socket.id})`);
+  console.log(`🔌 Connected: ${socket.id}`);
 
   socket.on("join_room", (roomId) => {
     // ✅ NEW: only allow one active room per socket (keeps things clean)
@@ -132,7 +118,7 @@ io.on("connection", (socket) => {
 
   socket.on("disconnect", () => {
     socketRooms.delete(socket.id);
-    console.log(`🔌 Disconnected: ${socket.user.username} (${socket.id})`);
+    console.log(`🔌 Disconnected: ${socket.id}`);
   });
 });
 
