@@ -183,14 +183,18 @@ function Canvas({ roomId, onLeave }) {
           }
 
           // --- 2. NETWORK EMITTER ---
+          // --- 2. BULLETPROOF NETWORK EMITTER ---
           const stateChanged =
-            finger.draw    !== lastEmitted.current.drawing ||
-            finger.erase   !== lastEmitted.current.erasing; // ✅ also track erase changes
+            finger.draw  !== lastEmitted.current.drawing ||
+            finger.erase !== lastEmitted.current.erasing;
+            
           const moved =
             Math.abs(x - lastEmitted.current.x) > 1 ||
             Math.abs(y - lastEmitted.current.y) > 1;
 
-          if (stateChanged || moved) {
+          // 🚨 THE FIX: Only tell the server if we changed state (pen down/up)
+          // OR if we are ACTIVELY drawing/erasing and moving. Do NOT spam hover data!
+          if (stateChanged || (isActive && moved)) {
             socket.emit("draw_event", {
               roomId,
               x,
@@ -207,7 +211,6 @@ function Canvas({ roomId, onLeave }) {
               erasing: finger.erase,
             };
           }
-
         } else {
           // Hand lost — lift pen and notify remote
           localLastPos.current = null;
