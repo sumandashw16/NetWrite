@@ -8,15 +8,11 @@ const bcrypt   = require("bcrypt");
 const jwt      = require("jsonwebtoken");
 const User     = require("./models/User");
 
-// ─── App Setup ────────────────────────────────────────────────────────────────
+// ─── App ──────────────────────────────────────────────────────────────────────
 
 const app = express();
 
-// ✅ CHANGED: lock CORS to your frontend origin via env var.
-// Falls back to * in dev if FRONTEND_URL isn't set.
-const ALLOWED_ORIGIN = process.env.FRONTEND_URL || "*";
-
-app.use(cors({ origin: ALLOWED_ORIGIN, methods: ["GET", "POST"] }));
+app.use(cors({ origin: "*", methods: ["GET", "POST"] }));
 app.use(express.json());
 
 // ─── Database ─────────────────────────────────────────────────────────────────
@@ -31,10 +27,9 @@ mongoose
 app.post("/register", async (req, res) => {
   try {
     const { username, email, password } = req.body;
-    if (!username || !email || !password)
-      return res.status(400).json({ message: "All fields are required." });
 
-    if (await User.findOne({ email }))
+    const existingUser = await User.findOne({ email });
+    if (existingUser)
       return res.status(400).json({ message: "User already exists!" });
 
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -50,14 +45,13 @@ app.post("/register", async (req, res) => {
 app.post("/login", async (req, res) => {
   try {
     const { email, password } = req.body;
-    if (!email || !password)
-      return res.status(400).json({ message: "All fields are required." });
 
     const user = await User.findOne({ email });
     if (!user)
       return res.status(400).json({ message: "User not found!" });
 
-    if (!await bcrypt.compare(password, user.password))
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+    if (!isPasswordValid)
       return res.status(400).json({ message: "Invalid credentials!" });
 
     const token = jwt.sign(
@@ -74,51 +68,32 @@ app.post("/login", async (req, res) => {
   }
 });
 
-// ─── HTTP + Socket Server ─────────────────────────────────────────────────────
+// ─── Socket Server ────────────────────────────────────────────────────────────
 
 const server = http.createServer(app);
 
 const io = new Server(server, {
-  cors: { origin: ALLOWED_ORIGIN, methods: ["GET", "POST"] }
+  cors: { origin: "*", methods: ["GET", "POST"] }
 });
 
-
-
-// ✅ NEW: track which room each socket has joined so we can validate emits.
-// Map<socketId, roomId>
-const socketRooms = new Map();
-
 io.on("connection", (socket) => {
-  console.log(`🔌 Connected: ${socket.id}`);
+  console.log("user connected", socket.id);
 
   socket.on("join_room", (roomId) => {
-    // ✅ NEW: only allow one active room per socket (keeps things clean)
-    const prevRoom = socketRooms.get(socket.id);
-    if (prevRoom) {
-      socket.leave(prevRoom);
-      socketRooms.delete(socket.id);
-    }
-
     socket.join(roomId);
-    socketRooms.set(socket.id, roomId);
-    console.log(`📦 ${socket.user.username} joined room ${roomId}`);
+    console.log(`User ${socket.id} joined room ${roomId}`);
   });
 
   socket.on("draw_event", (data) => {
-    const joinedRoom = socketRooms.get(socket.id);
-    if (!joinedRoom || joinedRoom !== data.roomId) return;
     socket.to(data.roomId).emit("draw_event", data);
   });
 
   socket.on("clear_canvas", (data) => {
-    const joinedRoom = socketRooms.get(socket.id);
-    if (!joinedRoom || joinedRoom !== data.roomId) return;
     socket.to(data.roomId).emit("clear_canvas");
   });
 
   socket.on("disconnect", () => {
-    socketRooms.delete(socket.id);
-    console.log(`🔌 Disconnected: ${socket.id}`);
+    console.log("user disconnected", socket.id);
   });
 });
 
@@ -127,8 +102,7 @@ io.on("connection", (socket) => {
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
 
-// ✅ NEW: Graceful shutdown — closes DB and server cleanly on Ctrl+C or
-// process kill. Prevents data corruption and zombie connections.
+// Graceful shutdown
 const shutdown = async (signal) => {
   console.log(`\n${signal} received. Shutting down...`);
   server.close(() => console.log("✅ HTTP server closed"));
