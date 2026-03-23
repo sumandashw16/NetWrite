@@ -22,8 +22,8 @@ import { HandLandmarker, FilesetResolver } from "@mediapipe/tasks-vision";
 
 const MODEL_URL =
   "https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task";
-const WASM_URL =
-  "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision/wasm";
+// 🚨 Notice the @0.10.12 added right after the package name!
+const WASM_URL = "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.32/wasm";
 
 /**
  * Pinch ratio thresholds (pinchDist / palmWidth).
