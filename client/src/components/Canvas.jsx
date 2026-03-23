@@ -3,6 +3,7 @@ import socket from "../utils/socket";
 // ✅ NEW: import destroyHandTracker for GPU cleanup on unmount
 import { initHandTracker, detectHands, destroyHandTracker } from "../utils/handTracker";
 import "./Canvas.css";
+import VoiceRadio from "./VoiceRadio";
 
 function Canvas({ roomId, onLeave }) {
   const canvasRef = useRef(null);
@@ -345,6 +346,8 @@ function Canvas({ roomId, onLeave }) {
             <button className="btn-action btn-leave" onClick={onLeave}>
               Exit Pit Lane
             </button>
+            {/* 🏎️ THE NEW TEAM RADIO */}
+            <VoiceRadio roomId={roomId} />
           </div>
         </div>
       </div>
