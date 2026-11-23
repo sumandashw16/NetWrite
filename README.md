@@ -7,4 +7,4 @@
 * Designed and integrated a **MongoDB** database to persist user profiles, saved drawings, and application data.
 * Implemented collaborative drawing features, enabling multiple users to interact on a shared canvas in real time.
 
-**Tech Stack:** React.js, Node.js, Express.js, Socket.IO, Google MediaPipe, HTML5 Canvas API, MongoDB, JWT
+**Tech Stack:** React.js, Node.js, Express.js, Socket.IO, Google MediaPipe, HTML5 Canvas API, JWT, MongoDB
